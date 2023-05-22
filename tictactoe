@@ -21,14 +21,19 @@ public class Cell extends JPanel {
     @Override
     public void paintComponent(Graphics g){
         super.paintComponent(g);
+        
+        g.setColor(Color.ORANGE);
+        g.drawRect(0, 0, getWidth()-1, getHeight()-1);
+        
         if(token=='X'){
             g.setColor(Color.RED);
-            g.drawLine(20, 20, getWidth()-20, getHeight()-20);
-            g.drawLine(getWidth()-20, 20, 20, getHeight()-20);
+            g.setFont(new Font("Arial",Font.BOLD, getWidth()-10));
+            g.drawString("X",20,getHeight()-20);
         }
         else if(token == 'O'){
             g.setColor(Color.GREEN);
-            g.drawOval(30, 30, getWidth()-40, getHeight()-40);
+            g.setFont(new Font("Arial",Font.BOLD, getWidth()-10));
+            g.drawString("O",20,getHeight()-20);
         }
     }
 }
@@ -36,31 +41,35 @@ public class Cell extends JPanel {
 class TicTacToe extends JFrame {
     private char whoseTurn ='X';
     private Cell[][]cell = new Cell[3][3];
-    private JLabel jlblStatus = new JLabel("X's turn to play");
+    private JLabel jlblStatus;
     private JFrame frame = new JFrame();
-    private JPanel panel = new JPanel(new GridLayout(3,3));
+    private JPanel panel;
     
-    public TicTacToe(){
-        panel.setLayout(new GridLayout(3,3));
-        panel.setSize(300,300);
-        panel.setVisible(true);
-        jlblStatus.setFont(new Font("Arial",Font.BOLD,30));
-        for(int i=0; i<3; i++){
-            for(int j=0; j<3; j++){
+    public TicTacToe(int size){
+        cell = new Cell[size][size];
+        jlblStatus = new JLabel("X's turn to play");
+        jlblStatus.setFont(new Font("Arial", Font.ITALIC, 60));
+        panel = new JPanel(new GridLayout(size, size));
+        
+        for(int i=0; i<size; i++){
+            for(int j=0; j<size; j++){
                 cell[i][j]= new Cell();
-                cell[i][j].setBackground(Color.WHITE);
+                cell[i][j].setBackground(Color.YELLOW);
                 panel.add(cell[i][j]);
                 cell[i][j].addMouseListener(new MyMouseListener());
             }
         }
-        add(panel);
+        panel.setBorder(BorderFactory.createLineBorder(Color.ORANGE,2));
+        add(panel, BorderLayout.CENTER);
         add(jlblStatus, BorderLayout.SOUTH);
         
     }
     
     public boolean isFull(){
-        for(int i=0; i<3; i++){
-            for(int j=0; j<3; j++){
+        int size = cell.length;
+        
+        for(int i=0; i<size; i++){
+            for(int j=0; j<size; j++){
                if(cell[i][j].getToken()== ' '){
                    return false;
                }
@@ -70,32 +79,65 @@ class TicTacToe extends JFrame {
     }
     
     public boolean isWon(char token){
-        for(int i=0; i<3; i++){
-            if(cell[i][0].getToken()== token && 
-               cell[i][1].getToken()== token && 
-               cell[i][2].getToken()==token){
-               return true;
+        int size = cell.length;
+        
+        //check row
+        for(int i=0; i<size; i++){
+            boolean rowWin = true;
+            for(int j=0; j<size; j++){
+                if(cell[i][j].getToken() != token){
+                    rowWin = false;
+                    break;
+                }
+            }
+            if(rowWin){
+                return true;
             }
         }
-        for(int j=0; j<3; j++){
-            if(cell[0][j].getToken()== token && 
-               cell[1][j].getToken()== token && 
-               cell[2][j].getToken()==token){
-               return true;
+        
+        //check column
+         for(int j=0; j<size; j++){
+            boolean colWin = true;
+            for(int i=0; i<size; i++){
+                if(cell[i][j].getToken() != token){
+                    colWin = false;
+                    break;
+                }
+            }
+            if(colWin){
+                return true;
             }
         }
-        if(cell[0][0].getToken()== token && 
-               cell[1][1].getToken()== token && 
-               cell[2][2].getToken()==token){
-               return true;
-       }
-        if(cell[0][2].getToken()== token && 
-               cell[1][1].getToken()== token && 
-               cell[2][0].getToken()==token){
-               return true;
+         
+         //check diag
+        boolean diag1Win = true;
+        boolean diag2Win = true;
+        for(int i=0; i<size; i++){
+            if(cell[i][i].getToken() != token){
+                diag1Win = false;
+            }
+            if(cell[i][size-1-i].getToken() != token){
+                diag2Win = false;
+            }
         }
+        if(diag1Win || diag2Win){
+            return true;
+        }
+        
         return false;
 }
+    
+    private void resetGame(){
+        whoseTurn = 'X';
+        
+        int size = cell.length;
+        for(int i=0; i<size; i++){
+            for(int j=0; j<size; j++){
+                cell[i][j].setToken(' ');
+            }
+        }
+        jlblStatus.setText("X's turn to play");
+    }
     
     private class MyMouseListener extends MouseAdapter{
         @Override
@@ -106,38 +148,49 @@ class TicTacToe extends JFrame {
                 clickedCell.setToken(whoseTurn);
                 
                 if(isWon(whoseTurn)){
-                    jlblStatus.setText(whoseTurn + "wins! Game over.");
-                    gameOver(whoseTurn + "wins!");
-                    whoseTurn = ' ';
+                    jlblStatus.setText(whoseTurn + "wins!");
+                    int choice = JOptionPane.showConfirmDialog(null, "Do you want play again?","Game Over",JOptionPane.YES_NO_OPTION);
+                    if(choice == JOptionPane.YES_OPTION){
+                        resetGame();
+                    }
+                    else{
+                        whoseTurn = ' ';
+                    }
                 }
                 else if(isFull()){
-                    jlblStatus.setText("It is a draw! Game over.");
-                     gameOver(whoseTurn + "wins!");
+                    jlblStatus.setText("It is a draw!");
+                    int choice = JOptionPane.showConfirmDialog(null, "Do you want play again?","Game Over",JOptionPane.YES_NO_OPTION);
+                    if(choice == JOptionPane.YES_OPTION){
+                        resetGame();
+                    }
+                    else{
+                        whoseTurn = ' ';
+                    }
                     whoseTurn = ' ';
                 }
                 else{
                     whoseTurn = (whoseTurn=='X')?'O':'X';
-                    //gameOver(whoseTurn + "wins!");
                     jlblStatus.setText(whoseTurn + "'s turn to play");
                 }
             }
         }
     }
     
-    public void gameOver(String s){
-       JOptionPane.showOptionDialog(null, s, "Game Over", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null,new Object[]{}, null);
-    }
+   // public void gameOver(String s){
+       //JOptionPane.showOptionDialog(null, s, "Game Over", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null,new Object[]{}, null);
+   // }
     
     public static void main(String[] args) {
-        TicTacToe frame = new TicTacToe();
-        frame.setTitle("TIC TAC TOE");
-        frame.setSize(500, 500);
-        frame.setLocationRelativeTo(null);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
+        int size = Integer.parseInt(JOptionPane.showInputDialog("Enter your prefered cell size of Tic Tac Toe: "));
         
+        SwingUtilities.invokeLater(() -> {
+             TicTacToe frame = new TicTacToe(size);
+             frame.setTitle("TIC TAC TOE");
+             frame.setSize(800, 800);
+             frame.setLocationRelativeTo(null);
+             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+             frame.setVisible(true);
+        }); 
     }
     
-  } 
-    
-
+} 
